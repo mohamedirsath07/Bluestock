@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - HireNext</title>
+    <link rel="stylesheet" href="./css/login.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <!-- Left Side - Image Placeholder -->
+            <div class="login-image">
+                <div class="image-placeholder">
+                    <span>IMG Placeholder</span>
+                </div>
+            </div>
+
+            <!-- Right Side - Login Form -->
+            <div class="login-form-section">
+                <div class="login-form-wrapper">
+                    <h1 class="login-title">Login as a Company</h1>
+
+                    <form id="loginForm" class="login-form">
+                        <!-- Email ID -->
+                        <div class="form-group">
+                            <label for="email" class="form-label">Email ID</label>
+                            <input 
+                                type="email" 
+                                id="email" 
+                                class="form-input" 
+                                placeholder="Enter your email"
+                                required
+                            />
+                        </div>
+
+                        <!-- Login with OTP Link -->
+                        <div class="form-link">
+                            <a href="#" class="otp-link">Login with OTP</a>
+                        </div>
+
+                        <!-- Password -->
+                        <div class="form-group">
+                            <label for="password" class="form-label">Enter your password</label>
+                            <div class="password-input-wrapper">
+                                <input 
+                                    type="password" 
+                                    id="password" 
+                                    class="form-input" 
+                                    placeholder="Enter your password"
+                                    required
+                                />
+                                <button type="button" class="toggle-password" id="togglePassword">
+                                    <svg class="eye-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                                        <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Forgot Password -->
+                        <div class="form-link forgot-password">
+                            <span class="key-icon">🔑</span>
+                            <a href="#" class="forgot-link">Forgot Password?</a>
+                        </div>
+
+                        <!-- Login Button -->
+                        <button type="submit" class="login-btn">Login</button>
+
+                        <!-- Sign Up Link -->
+                        <div class="signup-link">
+                            Don't have an account? <a href="#" class="signup-link-text">Sign up</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="./js/login.js"></script>
+</body>
+</html>
