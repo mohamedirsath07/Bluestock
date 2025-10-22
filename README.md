@@ -3,11 +3,6 @@
 ## 📋 Project Overview
 This is the warm-up assignment for the Bluestock internship, building a company module interface.
 
-## 🎨 Design Reference
-- **Figma Design**: [View Design](https://www.figma.com/design/5H4Yd2sn2wYE1zLj5SsGDh/5-Warm-UP-Assignment?node-id=0-1&t=2YDnJFKBjeqxjjxW-1)
-- **Sample Module**: [View Sample](https://bluestock.in/backoffice-tech/company-module-sample/index.html)
-- **Company Database**: [View Database](https://bluestock.in/backoffice-tech/company_db)
-
 ## 🚀 Getting Started
 
 ### Prerequisites
