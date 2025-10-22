@@ -1,0 +1,421 @@
+{
+  "client": "Thunder Client",
+  "collectionName": "Bluestock API Tests",
+  "dateExported": "2025-10-22",
+  "version": "1.2",
+  "folders": [
+    {
+      "name": "Authentication",
+      "requests": []
+    },
+    {
+      "name": "Company Profile",
+      "requests": []
+    }
+  ],
+  "requests": [
+    {
+      "name": "1. Register User - Valid",
+      "method": "POST",
+      "url": "{{baseUrl}}/api/auth/register",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"Test1234!\",\n  \"full_name\": \"John Doe\",\n  \"gender\": \"m\",\n  \"mobile_no\": \"+919876543210\",\n  \"signup_type\": \"e\"\n}",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "201"
+        },
+        {
+          "type": "json-query",
+          "value": "$.success",
+          "expected": "true"
+        },
+        {
+          "type": "json-query",
+          "value": "$.data.user_id",
+          "expected": "exists"
+        }
+      ]
+    },
+    {
+      "name": "2. Register User - Duplicate Email",
+      "method": "POST",
+      "url": "{{baseUrl}}/api/auth/register",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"Test1234!\",\n  \"full_name\": \"John Doe\",\n  \"gender\": \"m\",\n  \"mobile_no\": \"+919876543210\",\n  \"signup_type\": \"e\"\n}",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "400"
+        },
+        {
+          "type": "json-query",
+          "value": "$.success",
+          "expected": "false"
+        }
+      ]
+    },
+    {
+      "name": "3. Register User - Invalid Email",
+      "method": "POST",
+      "url": "{{baseUrl}}/api/auth/register",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"invalid-email\",\n  \"password\": \"Test1234!\",\n  \"full_name\": \"John Doe\",\n  \"gender\": \"m\",\n  \"mobile_no\": \"+919876543210\"\n}",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "400"
+        }
+      ]
+    },
+    {
+      "name": "4. Register User - Weak Password",
+      "method": "POST",
+      "url": "{{baseUrl}}/api/auth/register",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"weak@example.com\",\n  \"password\": \"weak\",\n  \"full_name\": \"John Doe\",\n  \"gender\": \"m\",\n  \"mobile_no\": \"+919876543210\"\n}",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "400"
+        }
+      ]
+    },
+    {
+      "name": "5. Login - Valid Credentials",
+      "method": "POST",
+      "url": "{{baseUrl}}/api/auth/login",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"Test1234!\"\n}",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "value": "$.data.token",
+          "expected": "exists"
+        },
+        {
+          "type": "set-env-var",
+          "value": "authToken",
+          "path": "$.data.token"
+        }
+      ]
+    },
+    {
+      "name": "6. Login - Invalid Email",
+      "method": "POST",
+      "url": "{{baseUrl}}/api/auth/login",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"nonexistent@example.com\",\n  \"password\": \"Test1234!\"\n}",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "401"
+        }
+      ]
+    },
+    {
+      "name": "7. Login - Wrong Password",
+      "method": "POST",
+      "url": "{{baseUrl}}/api/auth/login",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"WrongPassword123!\"\n}",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "401"
+        }
+      ]
+    },
+    {
+      "name": "8. Get Current User",
+      "method": "GET",
+      "url": "{{baseUrl}}/api/auth/me",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{authToken}}"
+        }
+      ],
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "value": "$.data.email",
+          "expected": "exists"
+        }
+      ]
+    },
+    {
+      "name": "9. Register Company - Valid",
+      "method": "POST",
+      "url": "{{baseUrl}}/api/company/register",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{authToken}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"company_name\": \"Tech Innovations Inc.\",\n  \"address\": \"123 Tech Street, Silicon Valley\",\n  \"city\": \"San Francisco\",\n  \"state\": \"California\",\n  \"country\": \"United States\",\n  \"postal_code\": \"94105\",\n  \"website\": \"https://techinnovations.com\",\n  \"industry\": \"Software Development\",\n  \"founded_date\": \"2020-01-15\",\n  \"description\": \"We are a leading software development company specializing in AI and cloud solutions.\"\n}",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "201"
+        },
+        {
+          "type": "json-query",
+          "value": "$.data.id",
+          "expected": "exists"
+        }
+      ]
+    },
+    {
+      "name": "10. Register Company - No Auth",
+      "method": "POST",
+      "url": "{{baseUrl}}/api/company/register",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"company_name\": \"Test Company\",\n  \"address\": \"123 Street\",\n  \"city\": \"Mumbai\",\n  \"state\": \"Maharashtra\",\n  \"country\": \"India\",\n  \"postal_code\": \"400001\",\n  \"industry\": \"Technology\"\n}",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "401"
+        }
+      ]
+    },
+    {
+      "name": "11. Get Company Profile",
+      "method": "GET",
+      "url": "{{baseUrl}}/api/company/profile",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{authToken}}"
+        }
+      ],
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "value": "$.data.company_name",
+          "expected": "exists"
+        }
+      ]
+    },
+    {
+      "name": "12. Update Company Profile",
+      "method": "PUT",
+      "url": "{{baseUrl}}/api/company/profile",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{authToken}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"description\": \"Updated: We are a leading software development company specializing in AI, ML, and cloud solutions.\",\n  \"social_links\": {\n    \"facebook\": \"https://facebook.com/techinnovations\",\n    \"twitter\": \"https://twitter.com/techinnovations\",\n    \"linkedin\": \"https://linkedin.com/company/techinnovations\",\n    \"instagram\": \"https://instagram.com/techinnovations\"\n  }\n}",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "200"
+        },
+        {
+          "type": "json-query",
+          "value": "$.data.setup_progress",
+          "expected": "exists"
+        }
+      ]
+    },
+    {
+      "name": "13. Update Company - Partial Fields",
+      "method": "PUT",
+      "url": "{{baseUrl}}/api/company/profile",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{authToken}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"company_name\": \"Tech Innovations Pvt. Ltd.\"\n}",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "200"
+        }
+      ]
+    },
+    {
+      "name": "14. Upload Logo - Sample Base64",
+      "method": "POST",
+      "url": "{{baseUrl}}/api/company/upload-logo",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{authToken}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"imageData\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==\"\n}",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "200"
+        }
+      ]
+    },
+    {
+      "name": "15. Upload Banner - Sample Base64",
+      "method": "POST",
+      "url": "{{baseUrl}}/api/company/upload-banner",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{authToken}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"imageData\": \"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCwAB8A\"\n}",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "res-code",
+          "value": "200"
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "headers": [],
+    "tests": [],
+    "env variables": [
+      {
+        "name": "baseUrl",
+        "value": "http://localhost:5000"
+      },
+      {
+        "name": "testEmail",
+        "value": "demo@example.com"
+      },
+      {
+        "name": "authToken",
+        "value": ""
+      }
+    ]
+  }
+}

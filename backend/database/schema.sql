@@ -4,57 +4,51 @@
 -- Create Database
 -- Run: CREATE DATABASE bluestock_company;
 
--- Users Table
+-- Users Table (Updated to match provided schema)
 CREATE TABLE IF NOT EXISTS users (
-    user_id SERIAL PRIMARY KEY,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    phone VARCHAR(20) UNIQUE,
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password TEXT NOT NULL,
+    full_name VARCHAR(255) NOT NULL,
+    signup_type VARCHAR(1) NOT NULL DEFAULT 'e',
+    gender CHAR(1) NOT NULL CHECK (gender IN ('m', 'f', 'o')),
+    mobile_no VARCHAR(20) NOT NULL UNIQUE,
+    is_mobile_verified BOOLEAN DEFAULT FALSE,
+    is_email_verified BOOLEAN DEFAULT FALSE,
     firebase_uid VARCHAR(255) UNIQUE,
-    email_verified BOOLEAN DEFAULT FALSE,
-    phone_verified BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_login TIMESTAMP
 );
 
--- Companies Table
-CREATE TABLE IF NOT EXISTS companies (
-    company_id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
-    company_name VARCHAR(255),
-    about_us TEXT,
+-- Company Profile Table (Updated to match provided schema)
+CREATE TABLE IF NOT EXISTS company_profile (
+    id SERIAL PRIMARY KEY,
+    owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    company_name TEXT NOT NULL,
+    address TEXT NOT NULL,
+    city VARCHAR(50) NOT NULL,
+    state VARCHAR(50) NOT NULL,
+    country VARCHAR(50) NOT NULL,
+    postal_code VARCHAR(20) NOT NULL,
+    website TEXT,
     logo_url TEXT,
     banner_url TEXT,
-    organization_type VARCHAR(100),
-    industry_type VARCHAR(100),
-    team_size VARCHAR(50),
-    establishment_year DATE,
-    company_website VARCHAR(255),
-    company_vision TEXT,
-    map_location TEXT,
-    contact_phone VARCHAR(20),
-    contact_email VARCHAR(255),
+    industry TEXT NOT NULL,
+    founded_date DATE,
+    description TEXT,
+    social_links JSONB,
     setup_progress INTEGER DEFAULT 0,
     is_complete BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Social Media Links Table
-CREATE TABLE IF NOT EXISTS social_media_links (
-    link_id SERIAL PRIMARY KEY,
-    company_id INTEGER REFERENCES companies(company_id) ON DELETE CASCADE,
-    platform VARCHAR(50) NOT NULL,
-    profile_url TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- OTP Verification Table
 CREATE TABLE IF NOT EXISTS otp_verifications (
     otp_id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
-    phone VARCHAR(20) NOT NULL,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    mobile_no VARCHAR(20) NOT NULL,
     otp_code VARCHAR(6) NOT NULL,
     expires_at TIMESTAMP NOT NULL,
     verified BOOLEAN DEFAULT FALSE,
@@ -65,7 +59,7 @@ CREATE TABLE IF NOT EXISTS otp_verifications (
 -- Sessions Table (Optional - for refresh tokens)
 CREATE TABLE IF NOT EXISTS sessions (
     session_id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     refresh_token TEXT NOT NULL,
     expires_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -74,13 +68,12 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 
 -- Create Indexes for Performance
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_phone ON users(phone);
-CREATE INDEX idx_users_firebase_uid ON users(firebase_uid);
-CREATE INDEX idx_companies_user_id ON companies(user_id);
-CREATE INDEX idx_social_media_company_id ON social_media_links(company_id);
-CREATE INDEX idx_otp_phone ON otp_verifications(phone);
-CREATE INDEX idx_sessions_user_id ON sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_mobile_no ON users(mobile_no);
+CREATE INDEX IF NOT EXISTS idx_users_firebase_uid ON users(firebase_uid);
+CREATE INDEX IF NOT EXISTS idx_company_profile_owner_id ON company_profile(owner_id);
+CREATE INDEX IF NOT EXISTS idx_otp_mobile_no ON otp_verifications(mobile_no);
+CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
 
 -- Trigger to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -91,8 +84,20 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
+-- Apply triggers
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_companies_updated_at BEFORE UPDATE ON companies
+DROP TRIGGER IF EXISTS update_company_profile_updated_at ON company_profile;
+CREATE TRIGGER update_company_profile_updated_at BEFORE UPDATE ON company_profile
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Comments for documentation
+COMMENT ON TABLE users IS 'Stores user account information with email/password authentication';
+COMMENT ON TABLE company_profile IS 'Stores company profile information linked to users via owner_id';
+COMMENT ON COLUMN users.signup_type IS 'Signup type: e=email, g=google, f=facebook';
+COMMENT ON COLUMN users.gender IS 'Gender: m=male, f=female, o=other';
+COMMENT ON COLUMN company_profile.social_links IS 'JSON object containing social media links (e.g., {"facebook": "url", "twitter": "url"})';
+COMMENT ON COLUMN company_profile.logo_url IS 'Cloudinary URL for company logo';
+COMMENT ON COLUMN company_profile.banner_url IS 'Cloudinary URL for company banner';

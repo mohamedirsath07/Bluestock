@@ -24,7 +24,14 @@ export const registerValidation = [
     .withMessage('Password must be at least 8 characters')
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
     .withMessage('Password must contain uppercase, lowercase, and number'),
-  body('phone')
+  body('full_name')
+    .trim()
+    .isLength({ min: 2, max: 255 })
+    .withMessage('Full name is required (2-255 characters)'),
+  body('gender')
+    .isIn(['m', 'f', 'o'])
+    .withMessage('Gender must be m (male), f (female), or o (other)'),
+  body('mobile_no')
     .custom((value) => {
       try {
         const phoneNumber = parsePhoneNumber(value);
@@ -33,7 +40,11 @@ export const registerValidation = [
         return false;
       }
     })
-    .withMessage('Valid phone number is required'),
+    .withMessage('Valid mobile number with country code is required'),
+  body('signup_type')
+    .optional()
+    .isIn(['e', 'g'])
+    .withMessage('Signup type must be e (email) or g (Google)'),
 ];
 
 export const loginValidation = [
@@ -42,52 +53,62 @@ export const loginValidation = [
 ];
 
 export const companyValidation = [
-  body('companyName')
+  body('company_name')
     .optional()
     .trim()
     .isLength({ min: 2, max: 255 })
     .withMessage('Company name must be 2-255 characters'),
-  body('aboutUs')
+  body('address')
     .optional()
-    .customSanitizer((value) => sanitizeHtml(value, { allowedTags: [], allowedAttributes: {} }))
-    .isLength({ max: 2000 })
-    .withMessage('About us must be less than 2000 characters'),
-  body('organizationType')
+    .trim()
+    .notEmpty()
+    .withMessage('Address is required'),
+  body('city')
     .optional()
-    .isIn(['private', 'public', 'partnership', 'sole', 'llp'])
-    .withMessage('Invalid organization type'),
-  body('industryType')
+    .trim()
+    .isLength({ min: 2, max: 50 })
+    .withMessage('City must be 2-50 characters'),
+  body('state')
     .optional()
-    .isIn(['fintech', 'engineering', 'software', 'edtech', 'oil-gas', 'other'])
-    .withMessage('Invalid industry type'),
-  body('teamSize')
+    .trim()
+    .isLength({ min: 2, max: 50 })
+    .withMessage('State must be 2-50 characters'),
+  body('country')
     .optional()
-    .isIn(['1-10', '11-50', '51-200', '201-500', '501+'])
-    .withMessage('Invalid team size'),
-  body('companyWebsite')
+    .trim()
+    .isLength({ min: 2, max: 50 })
+    .withMessage('Country must be 2-50 characters'),
+  body('postal_code')
+    .optional()
+    .trim()
+    .isLength({ min: 3, max: 20 })
+    .withMessage('Postal code must be 3-20 characters'),
+  body('website')
     .optional()
     .isURL({ require_protocol: true })
     .withMessage('Valid URL is required'),
-  body('contactEmail')
+  body('industry')
     .optional()
-    .isEmail()
-    .normalizeEmail()
-    .withMessage('Valid email is required'),
-  body('contactPhone')
+    .trim()
+    .notEmpty()
+    .withMessage('Industry is required'),
+  body('founded_date')
     .optional()
-    .custom((value) => {
-      try {
-        const phoneNumber = parsePhoneNumber(value);
-        return phoneNumber.isValid();
-      } catch {
-        return false;
-      }
-    })
-    .withMessage('Valid phone number is required'),
+    .isISO8601()
+    .withMessage('Valid date is required (YYYY-MM-DD)'),
+  body('description')
+    .optional()
+    .customSanitizer((value) => sanitizeHtml(value, { allowedTags: [], allowedAttributes: {} }))
+    .isLength({ max: 2000 })
+    .withMessage('Description must be less than 2000 characters'),
+  body('social_links')
+    .optional()
+    .isObject()
+    .withMessage('Social links must be a valid JSON object'),
 ];
 
 export const otpValidation = [
-  body('phone')
+  body('mobile_no')
     .custom((value) => {
       try {
         const phoneNumber = parsePhoneNumber(value);
@@ -96,8 +117,8 @@ export const otpValidation = [
         return false;
       }
     })
-    .withMessage('Valid phone number is required'),
-  body('otpCode')
+    .withMessage('Valid mobile number with country code is required'),
+  body('otp_code')
     .isLength({ min: 6, max: 6 })
     .isNumeric()
     .withMessage('OTP must be 6 digits'),

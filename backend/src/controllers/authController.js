@@ -8,33 +8,33 @@ export const register = async (req, res) => {
   const client = await pool.connect();
   
   try {
-    const { email, password, phone } = req.body;
+    const { email, password, full_name, gender, mobile_no, signup_type = 'e' } = req.body;
 
     await client.query('BEGIN');
 
     // Check if user already exists
     const existingUser = await client.query(
-      'SELECT user_id FROM users WHERE email = $1 OR phone = $2',
-      [email, phone]
+      'SELECT id FROM users WHERE email = $1 OR mobile_no = $2',
+      [email, mobile_no]
     );
 
     if (existingUser.rows.length > 0) {
       await client.query('ROLLBACK');
       return res.status(400).json({
         success: false,
-        message: 'User already exists with this email or phone',
+        message: 'User already exists with this email or mobile number',
       });
     }
 
     // Hash password
-    const passwordHash = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user in database
     const result = await client.query(
-      `INSERT INTO users (email, password_hash, phone, email_verified, phone_verified)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING user_id, email, phone, created_at`,
-      [email, passwordHash, phone, false, false]
+      `INSERT INTO users (email, password, full_name, signup_type, gender, mobile_no, is_email_verified, is_mobile_verified)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING id, email, full_name, mobile_no, created_at`,
+      [email, hashedPassword, full_name, signup_type, gender, mobile_no, false, false]
     );
 
     const user = result.rows[0];
@@ -44,14 +44,15 @@ export const register = async (req, res) => {
       const firebaseUser = await auth.createUser({
         email,
         password,
-        phoneNumber: phone,
+        phoneNumber: mobile_no,
+        displayName: full_name,
         emailVerified: false,
       });
 
       // Update user with Firebase UID
       await client.query(
-        'UPDATE users SET firebase_uid = $1 WHERE user_id = $2',
-        [firebaseUser.uid, user.user_id]
+        'UPDATE users SET firebase_uid = $1 WHERE id = $2',
+        [firebaseUser.uid, user.id]
       );
     } catch (firebaseError) {
       console.error('Firebase user creation failed:', firebaseError);
@@ -60,23 +61,17 @@ export const register = async (req, res) => {
 
     // Create empty company profile
     await client.query(
-      'INSERT INTO companies (user_id, setup_progress) VALUES ($1, $2)',
-      [user.user_id, 0]
+      'INSERT INTO company_profile (owner_id, setup_progress) VALUES ($1, $2)',
+      [user.id, 0]
     );
 
     await client.query('COMMIT');
 
-    // Generate JWT token
-    const token = generateToken(user.user_id, user.email);
-
     res.status(201).json({
       success: true,
-      message: 'User registered successfully',
+      message: 'User registered successfully. Please verify mobile OTP.',
       data: {
-        userId: user.user_id,
-        email: user.email,
-        phone: user.phone,
-        token,
+        user_id: user.id,
       },
     });
   } catch (error) {
@@ -99,7 +94,7 @@ export const login = async (req, res) => {
 
     // Find user
     const result = await pool.query(
-      'SELECT user_id, email, password_hash, phone, email_verified FROM users WHERE email = $1',
+      'SELECT id, email, password, full_name, mobile_no, is_email_verified, is_mobile_verified FROM users WHERE email = $1',
       [email]
     );
 
@@ -113,7 +108,7 @@ export const login = async (req, res) => {
     const user = result.rows[0];
 
     // Verify password
-    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
       return res.status(401).json({
@@ -124,21 +119,23 @@ export const login = async (req, res) => {
 
     // Update last login
     await pool.query(
-      'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE user_id = $1',
-      [user.user_id]
+      'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1',
+      [user.id]
     );
 
     // Generate JWT token
-    const token = generateToken(user.user_id, user.email);
+    const token = generateToken(user.id, user.email);
 
     res.json({
       success: true,
       message: 'Login successful',
       data: {
-        userId: user.user_id,
+        user_id: user.id,
         email: user.email,
-        phone: user.phone,
-        emailVerified: user.email_verified,
+        full_name: user.full_name,
+        mobile_no: user.mobile_no,
+        is_email_verified: user.is_email_verified,
+        is_mobile_verified: user.is_mobile_verified,
         token,
       },
     });
@@ -152,58 +149,48 @@ export const login = async (req, res) => {
   }
 };
 
-// Send OTP
-export const sendOTP = async (req, res) => {
+// Verify email via Firebase
+export const verifyEmail = async (req, res) => {
   try {
-    const { phone } = req.body;
-    const userId = req.user.userId;
+    const { email, verificationCode } = req.body;
 
-    // Generate 6-digit OTP
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    // Verify email with Firebase
+    try {
+      await auth.getUserByEmail(email);
+      
+      // Update user email verification status
+      await pool.query(
+        'UPDATE users SET is_email_verified = TRUE WHERE email = $1',
+        [email]
+      );
 
-    // Store OTP in database
-    await pool.query(
-      `INSERT INTO otp_verifications (user_id, phone, otp_code, expires_at)
-       VALUES ($1, $2, $3, $4)`,
-      [userId, phone, otpCode, expiresAt]
-    );
-
-    // Send OTP via Firebase (or SMS service)
-    // For demo purposes, we'll return the OTP in development mode
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`📱 OTP for ${phone}: ${otpCode}`);
-      return res.json({
+      res.json({
         success: true,
-        message: 'OTP sent successfully',
-        otp: otpCode, // Only in development
+        message: 'Email verified successfully',
+      });
+    } catch (firebaseError) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email verification failed',
+        error: firebaseError.message,
       });
     }
-
-    // In production, use Firebase to send SMS
-    // await messaging.send({ ... });
-
-    res.json({
-      success: true,
-      message: 'OTP sent successfully',
-    });
   } catch (error) {
-    console.error('Send OTP error:', error);
+    console.error('Verify email error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to send OTP',
+      message: 'Email verification failed',
       error: error.message,
     });
   }
 };
 
-// Verify OTP
-export const verifyOTP = async (req, res) => {
+// Verify mobile via Firebase OTP
+export const verifyMobile = async (req, res) => {
   const client = await pool.connect();
   
   try {
-    const { phone, otpCode } = req.body;
-    const userId = req.user.userId;
+    const { mobile_no, otp_code } = req.body;
 
     await client.query('BEGIN');
 
@@ -211,17 +198,17 @@ export const verifyOTP = async (req, res) => {
     const result = await client.query(
       `SELECT otp_id, otp_code, expires_at, verified, attempts
        FROM otp_verifications
-       WHERE user_id = $1 AND phone = $2
+       WHERE mobile_no = $1
        ORDER BY created_at DESC
        LIMIT 1`,
-      [userId, phone]
+      [mobile_no]
     );
 
     if (result.rows.length === 0) {
       await client.query('ROLLBACK');
       return res.status(400).json({
         success: false,
-        message: 'No OTP found for this phone number',
+        message: 'No OTP found for this mobile number',
       });
     }
 
@@ -255,7 +242,7 @@ export const verifyOTP = async (req, res) => {
     }
 
     // Verify OTP
-    if (otpRecord.otp_code !== otpCode) {
+    if (otpRecord.otp_code !== otp_code) {
       await client.query(
         'UPDATE otp_verifications SET attempts = attempts + 1 WHERE otp_id = $1',
         [otpRecord.otp_id]
@@ -273,24 +260,24 @@ export const verifyOTP = async (req, res) => {
       [otpRecord.otp_id]
     );
 
-    // Update user phone verification status
+    // Update user mobile verification status
     await client.query(
-      'UPDATE users SET phone_verified = TRUE WHERE user_id = $1',
-      [userId]
+      'UPDATE users SET is_mobile_verified = TRUE WHERE mobile_no = $1',
+      [mobile_no]
     );
 
     await client.query('COMMIT');
 
     res.json({
       success: true,
-      message: 'Phone number verified successfully',
+      message: 'Mobile number verified successfully',
     });
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Verify OTP error:', error);
+    console.error('Verify mobile error:', error);
     res.status(500).json({
       success: false,
-      message: 'OTP verification failed',
+      message: 'Mobile verification failed',
       error: error.message,
     });
   } finally {
@@ -298,15 +285,17 @@ export const verifyOTP = async (req, res) => {
   }
 };
 
+
+
 // Get current user
 export const getCurrentUser = async (req, res) => {
   try {
     const userId = req.user.userId;
 
     const result = await pool.query(
-      `SELECT user_id, email, phone, email_verified, phone_verified, created_at, last_login
+      `SELECT id, email, full_name, gender, mobile_no, is_email_verified, is_mobile_verified, created_at, last_login
        FROM users
-       WHERE user_id = $1`,
+       WHERE id = $1`,
       [userId]
     );
 
