@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - HireNext</title>
     <link rel="stylesheet" href="./css/signup.css">
+    <link rel="stylesheet" href="./css/otp-modal.css">
 </head>
 <body>
     <div class="signup-container">
@@ -148,6 +149,74 @@
                         </div>
                     </form>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OTP Verification Modal -->
+    <div class="otp-modal-overlay" id="otpModal">
+        <div class="otp-modal">
+            <div class="otp-modal-header">
+                <h2 class="otp-modal-title">Great Almost done!</h2>
+                <p class="otp-modal-subtitle">Please verify your mobile no</p>
+            </div>
+
+            <div class="otp-modal-body">
+                <!-- Email Verification Info -->
+                <div class="otp-info-box email-info">
+                    <div class="otp-info-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke="currentColor" stroke-width="2" fill="none"/>
+                        </svg>
+                    </div>
+                    <div class="otp-info-text">
+                        <p>A verification link has been sent to your email. Please check your inbox and verify.</p>
+                    </div>
+                </div>
+
+                <!-- SMS OTP Info -->
+                <div class="otp-info-box sms-info">
+                    <div class="otp-info-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" stroke="currentColor" stroke-width="2" fill="none"/>
+                        </svg>
+                    </div>
+                    <div class="otp-info-text">
+                        <p>Enter the One Time Password (OTP) which has been sent to (<span id="maskedMobile">+91 92222*****442</span>)</p>
+                    </div>
+                </div>
+
+                <!-- OTP Input -->
+                <div class="otp-input-group">
+                    <label class="otp-input-label">Enter OTP</label>
+                    <div class="otp-input-wrapper">
+                        <input 
+                            type="text" 
+                            id="otpInput" 
+                            class="otp-input" 
+                            placeholder="Enter Your OTP Here"
+                            maxlength="6"
+                            pattern="[0-9]*"
+                            inputmode="numeric"
+                        />
+                        <div class="otp-error-message" id="otpError">Invalid OTP. Please try again.</div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="otp-actions">
+                    <div class="otp-resend-section">
+                        Didn't receive OTP? <a href="#" class="otp-resend-link" id="resendOtp">Resend OTP</a>
+                    </div>
+                    <div class="otp-report">
+                        Having Trouble? <a href="#" class="otp-report-link">Report Issue!</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="otp-modal-footer">
+                <button type="button" class="otp-btn otp-btn-close" id="closeOtpModal">Close</button>
+                <button type="button" class="otp-btn otp-btn-verify" id="verifyOtpBtn">Verify Mobile</button>
             </div>
         </div>
     </div>

@@ -7,9 +7,14 @@ const state = {
         companyName: '',
         aboutUs: '',
         organizationType: '',
-        industryType: [],
-        careersLink: '',
-        companyVision: ''
+        industryType: '',
+        teamSize: '',
+        establishmentYear: '',
+        companyWebsite: '',
+        companyVision: '',
+        mapLocation: '',
+        contactPhone: '',
+        contactEmail: ''
     }
 };
 
@@ -27,8 +32,8 @@ const elements = {
     foundingInfoForm: document.getElementById('foundingInfoForm'),
     successAlert: document.getElementById('successAlert'),
     alertMessage: document.getElementById('alertMessage'),
-    progressFill: document.getElementById('progressFill'),
-    progressPercentage: document.getElementById('progressPercentage')
+    progressFill: document.getElementById('setupProgressFill'),
+    progressPercentage: document.getElementById('setupProgressText')
 };
 
 // Calculate Progress
@@ -39,9 +44,14 @@ function calculateProgress() {
         state.formData.companyName,
         state.formData.aboutUs,
         state.formData.organizationType,
-        state.formData.industryType.length > 0,
-        state.formData.careersLink,
-        state.formData.companyVision
+        state.formData.industryType,
+        state.formData.teamSize,
+        state.formData.establishmentYear,
+        state.formData.companyWebsite,
+        state.formData.companyVision,
+        state.formData.mapLocation,
+        state.formData.contactPhone,
+        state.formData.contactEmail
     ];
     
     const filledFields = fields.filter(field => {
@@ -51,8 +61,15 @@ function calculateProgress() {
     
     const percentage = Math.round((filledFields / fields.length) * 100);
     
-    elements.progressFill.style.width = `${percentage}%`;
-    elements.progressPercentage.textContent = `${percentage}% Completed`;
+    // Update progress bar in header
+    if (elements.progressFill) {
+        elements.progressFill.style.width = `${percentage}%`;
+    }
+
+    // Update textual percentage if present
+    if (elements.progressPercentage) {
+        elements.progressPercentage.textContent = `${percentage}% Completed`;
+    }
     
     return percentage;
 }
@@ -69,6 +86,16 @@ function init() {
     console.log('🚀 HireNext Company Information System Initialized');
     setupEventListeners();
     loadSavedData();
+
+    // If redirected after signup, open the Settings (Company Info) view
+    const params = new URLSearchParams(window.location.search);
+    const section = params.get('section');
+    if (section === 'settings') {
+        // Activate Company Info tab by default
+        const targetBtn = document.querySelector('.tab-btn[data-tab="company-info"]');
+        if (targetBtn) targetBtn.click();
+    }
+
     calculateProgress();
 }
 
@@ -112,11 +139,59 @@ window.removeImage = function(type) {
     console.log(`🗑️ ${type} image removed`);
 };
 
+// Social Media Functions
+let socialLinkCounter = 4;
+
+window.addNewSocialLink = function() {
+    socialLinkCounter++;
+    const container = document.getElementById('socialLinksContainer');
+    
+    const newLinkHTML = `
+        <div class="social-link-row">
+            <label class="form-label">Social Link ${socialLinkCounter}</label>
+            <div class="social-link-input-group">
+                <select class="social-platform-select">
+                    <option value="facebook">Facebook</option>
+                    <option value="twitter">Twitter</option>
+                    <option value="instagram">Instagram</option>
+                    <option value="youtube">Youtube</option>
+                    <option value="linkedin">LinkedIn</option>
+                </select>
+                <input 
+                    type="url" 
+                    class="social-link-input" 
+                    placeholder="Profile link/url..."
+                />
+                <button type="button" class="remove-social-btn" onclick="removeSocialLink(this)">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M8 0C3.6 0 0 3.6 0 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8zm4 10.5L10.5 12 8 9.5 5.5 12 4 10.5 6.5 8 4 5.5 5.5 4 8 6.5 10.5 4 12 5.5 9.5 8 12 10.5z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', newLinkHTML);
+    console.log('➕ New social link added');
+};
+
+window.removeSocialLink = function(button) {
+    const socialLinkRow = button.closest('.social-link-row');
+    if (socialLinkRow) {
+        socialLinkRow.remove();
+        console.log('🗑️ Social link removed');
+    }
+};
+
 // Setup Event Listeners
 function setupEventListeners() {
     // Logout button
     const logoutBtn = document.getElementById('logoutBtn');
     logoutBtn?.addEventListener('click', handleLogout);
+    
+    // Save & Next buttons (support multiple buttons across tabs)
+    const saveNextBtns = document.querySelectorAll('.btn-save-next');
+    saveNextBtns.forEach(btn => btn.addEventListener('click', handleSaveNext));
     
     // Tab switching
     elements.tabBtns.forEach(btn => {
@@ -157,6 +232,25 @@ function setupEventListeners() {
         elements.foundingInfoForm.addEventListener('input', debounce(saveFormData, 500));
         elements.foundingInfoForm.addEventListener('change', debounce(saveFormData, 500));
     }
+
+    // Contact form auto-save
+    const contactForm = document.getElementById('contactForm');
+    if (contactForm) {
+        contactForm.addEventListener('input', debounce(saveFormData, 500));
+        contactForm.addEventListener('change', debounce(saveFormData, 500));
+    }
+
+    // Finish Editing button
+    const finishBtn = document.querySelector('.btn-finish');
+    if (finishBtn) {
+        finishBtn.addEventListener('click', handleFinishEditing);
+    }
+
+    // Previous buttons
+    const previousBtns = document.querySelectorAll('.btn-previous');
+    previousBtns.forEach(btn => {
+        btn.addEventListener('click', handlePrevious);
+    });
 }
 
 // Handle Tab Click
@@ -184,8 +278,68 @@ function handleLogout() {
     }
 }
 
-// Handle Image Upload
-function handleImageUpload(e, type) {
+// Handle Save & Next
+function handleSaveNext() {
+    // Save current form data
+    saveFormData();
+    
+    // Get current tab index
+    const tabs = Array.from(elements.tabBtns);
+    const currentIndex = tabs.findIndex(btn => btn.classList.contains('active'));
+    
+    // Move to next tab
+    if (currentIndex < tabs.length - 1) {
+        tabs[currentIndex + 1].click();
+        
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        // Show success message
+        showAlert('Progress saved successfully!');
+    } else {
+        // Last tab - show completion message
+        alert('All sections completed! Your company profile is ready.');
+    }
+}
+
+// Handle Finish Editing
+function handleFinishEditing() {
+    // Save current form data
+    saveFormData();
+    
+    // Calculate final progress
+    const finalProgress = calculateProgress();
+    
+    // Show completion message
+    alert(`Company profile completed! ${finalProgress}% of information filled.`);
+    
+    // Log completion
+    console.log('✅ Company profile editing finished!');
+    console.log('📊 Final Data:', state.formData);
+    
+    // Optional: Show success message
+    showAlert('Company profile saved successfully!');
+}
+
+// Handle Previous
+function handlePrevious() {
+    // Save current form data
+    saveFormData();
+    
+    // Get current tab index
+    const tabs = Array.from(elements.tabBtns);
+    const currentIndex = tabs.findIndex(btn => btn.classList.contains('active'));
+    
+    // Move to previous tab
+    if (currentIndex > 0) {
+        tabs[currentIndex - 1].click();
+        
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}
+
+// Setup Drag and Drop
 function setupDragAndDrop(dropArea, fileInput, type) {
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         dropArea.addEventListener(eventName, preventDefaults, false);
@@ -276,17 +430,28 @@ function saveFormData() {
     
     // Founding Info
     const organizationType = document.getElementById('organizationType')?.value || '';
-    const industryTypeSelect = document.getElementById('industryType');
-    const industryType = industryTypeSelect ? Array.from(industryTypeSelect.selectedOptions).map(opt => opt.value) : [];
-    const careersLink = document.getElementById('careersLink')?.value || '';
+    const industryType = document.getElementById('industryType')?.value || '';
+    const teamSize = document.getElementById('teamSize')?.value || '';
+    const establishmentYear = document.getElementById('establishmentYear')?.value || '';
+    const companyWebsite = document.getElementById('companyWebsite')?.value || '';
     const companyVision = document.getElementById('companyVision')?.value || '';
+    
+    // Contact Info
+    const mapLocation = document.getElementById('mapLocation')?.value || '';
+    const contactPhone = document.getElementById('contactPhone')?.value || '';
+    const contactEmail = document.getElementById('contactEmail')?.value || '';
     
     state.formData.companyName = companyName;
     state.formData.aboutUs = aboutUs;
     state.formData.organizationType = organizationType;
     state.formData.industryType = industryType;
-    state.formData.careersLink = careersLink;
+    state.formData.teamSize = teamSize;
+    state.formData.establishmentYear = establishmentYear;
+    state.formData.companyWebsite = companyWebsite;
     state.formData.companyVision = companyVision;
+    state.formData.mapLocation = mapLocation;
+    state.formData.contactPhone = contactPhone;
+    state.formData.contactEmail = contactEmail;
     
     // Save to localStorage
     try {
@@ -340,21 +505,37 @@ function loadSavedData() {
                 document.getElementById('organizationType').value = data.organizationType;
             }
             
-            if (data.industryType && data.industryType.length > 0) {
-                const select = document.getElementById('industryType');
-                Array.from(select.options).forEach(option => {
-                    if (data.industryType.includes(option.value)) {
-                        option.selected = true;
-                    }
-                });
+            if (data.industryType) {
+                document.getElementById('industryType').value = data.industryType;
             }
-            
-            if (data.careersLink) {
-                document.getElementById('careersLink').value = data.careersLink;
+
+            if (data.teamSize) {
+                document.getElementById('teamSize').value = data.teamSize;
+            }
+
+            if (data.establishmentYear) {
+                document.getElementById('establishmentYear').value = data.establishmentYear;
+            }
+
+            if (data.companyWebsite) {
+                document.getElementById('companyWebsite').value = data.companyWebsite;
             }
             
             if (data.companyVision) {
                 document.getElementById('companyVision').value = data.companyVision;
+            }
+
+            // Restore form fields - Contact Info
+            if (data.mapLocation) {
+                document.getElementById('mapLocation').value = data.mapLocation;
+            }
+
+            if (data.contactPhone) {
+                document.getElementById('contactPhone').value = data.contactPhone;
+            }
+
+            if (data.contactEmail) {
+                document.getElementById('contactEmail').value = data.contactEmail;
             }
             
             state.formData = { ...state.formData, ...data };
