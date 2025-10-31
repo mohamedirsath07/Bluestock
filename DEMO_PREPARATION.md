@@ -8,13 +8,129 @@ This guide provides a comprehensive checklist and script for demonstrating the B
 
 ## 📋 Table of Contents
 
-1. [Pre-Demo Setup](#pre-demo-setup)
-2. [Demo Script](#demo-script)
-3. [Feature Demonstrations](#feature-demonstrations)
-4. [API Testing Demo](#api-testing-demo)
-5. [Code Walkthrough](#code-walkthrough)
-6. [Known Issues & Workarounds](#known-issues--workarounds)
-7. [Q&A Preparation](#qa-preparation)
+0. [Quick start commands (Windows)](#quick-start-commands-windows)
+1. [OBS Studio quick setup (60 seconds)](#obs-studio-quick-setup-60-seconds)
+2. [10-minute demo script (read‑aloud)](#10-minute-demo-script-readaloud)
+3. [Pre-Demo Setup](#pre-demo-setup)
+4. [Demo Script](#demo-script)
+5. [Feature Demonstrations](#feature-demonstrations)
+6. [API Testing Demo](#api-testing-demo)
+7. [Code Walkthrough](#code-walkthrough)
+8. [Known Issues & Workarounds](#known-issues--workarounds)
+9. [Q&A Preparation](#qa-preparation)
+
+---
+
+## ⚡ Quick start commands (Windows)
+
+Run these in PowerShell before recording.
+
+```powershell
+# Backend
+Set-Location D:\Studiess\Intern\Bluestock\backend
+$env:PORT = "5000"
+node src/server.js
+
+# In a new terminal — Frontend
+Set-Location D:\Studiess\Intern\Bluestock\frontend
+npm run dev
+```
+
+Notes:
+- If Firebase/Cloudinary creds are not set, backend runs in demo mode (safe for recording).
+- Frontend will start at http://localhost:5173
+- Backend API at http://localhost:5000/api
+
+---
+
+## 🎥 OBS Studio quick setup (60 seconds)
+
+- Scene: Display Capture (your primary screen) + Mic/Aux (your microphone)
+- Settings → Output → Recording: Simple, MP4/MKV, Quality: High, Encoder: Auto
+- Settings → Video: Base 1920×1080, Output 1920×1080, FPS 30
+- Settings → Hotkeys: Start Recording = F9, Stop Recording = F10
+- Settings → Audio: Mic/Aux = your mic device, Desktop Audio on (optional)
+- Click Start Recording (F9). Stop with F10.
+
+---
+
+## 🗣️ 10-minute demo script (read‑aloud)
+
+Use this word‑for‑word script. Total 10 minutes: 8 min frontend demo + 2 min code/logic.
+
+### 00:00 – 00:20 Intro
+Say: "Hello, I’m [Your Name]. This is my Bluestock warm‑up assignment. I’ll first demo the working module, then briefly walk through the code and logic."
+
+Show: Browser with http://localhost:5173 open.
+
+### 00:20 – 00:40 What you’ll see
+Say: "I’ll show registration, login, the company profile dashboard with logo/banner upload, social links, and progress tracking. Then I’ll show the code structure and API briefly."
+
+### 00:40 – 01:10 App overview
+Say: "This is the landing/auth area. It’s built with React 18, Vite, and Material‑UI. State is handled with Redux Toolkit, server calls with React Query and Axios."
+
+### 01:10 – 03:30 Registration flow (validations)
+Action:
+- Click Register.
+- Intentionally submit with empty fields → show validation messages.
+- Enter demo data:
+   - Email: test.demo+now@example.com
+   - Password: Demo1234!
+   - Full name: Demo User
+   - Mobile: +919876543210
+   - Gender: Male
+- Submit.
+
+Say: "The form validates email format, strong password, and international mobile. On submit, the backend creates the user and returns a token."
+
+Note (if needed): "If Firebase SMS isn’t configured, OTP is simulated in demo mode; core flow still works."
+
+### 03:30 – 04:30 Login
+Action:
+- Go to Login, enter the same email and password, click Login.
+
+Say: "On login, we store a JWT in localStorage via Axios interceptor and redirect to a protected dashboard route."
+
+### 04:30 – 07:30 Dashboard: company profile setup
+Action:
+- Show 4 tabs: Company Info, Founding Info, Social Media, Contact.
+- Company Info: fill Name, Address, City, Country, Website.
+- Upload Logo and Banner.
+
+Say: "Images upload to Cloudinary. If credentials aren’t present, the UI still shows preview and gracefully skips remote upload in demo mode."
+
+- Social Media tab: add Facebook/Twitter/LinkedIn links.
+- Click Save/Update.
+
+Say: "Setup progress updates in real time based on filled fields. Data persists via the API and refreshes correctly."
+
+Show: progress bar increases; refresh the page to show persistence.
+
+### 07:30 – 08:00 Wrap the user flow
+Action: Optional logout/login again.
+
+Say: "That’s the end‑to‑end user flow: register, login, set up company profile, upload images, manage social links, and track completion."
+
+### 08:00 – 10:00 Code and logic (2 minutes)
+Action: Switch to VS Code.
+
+Say (Frontend): "Frontend is React + Vite. Structure under `frontend/src`: pages for Login/Register/Dashboard, `components/` like ImageUploader and ProtectedRoute, `store/` with `authSlice` and `companySlice`, and `api/axios.js` that injects the JWT."
+
+Show:
+- `frontend/src/api/axios.js`: request interceptor adding Authorization header.
+- `frontend/src/store/authSlice.js`: loginSuccess reducer.
+- `frontend/src/pages/Dashboard.jsx`: tabbed layout + progress calculation.
+
+Say (Backend): "Backend is Node/Express with PostgreSQL. Endpoints live in `backend/src/routes`, logic in `controllers`, and JWT auth middleware in `middleware/auth.js`. We validate input, prevent SQL injection via parameterized queries, and sanitize HTML."
+
+Show:
+- `backend/src/controllers/authController.js`: register/login function signature and bcrypt hashing.
+- `backend/src/controllers/companyController.js`: update profile and progress calculation.
+- `backend/src/server.js`: route mounting and security middleware (Helmet, CORS, rate‑limit).
+
+Say (Tests): "I added Jest + Supertest tests for auth and company endpoints, plus a Thunder Client collection for manual API checks."
+
+Close (10:00): "Thanks for watching. Code, tests, and docs are in the repo. Happy to answer questions."
 
 ---
 
